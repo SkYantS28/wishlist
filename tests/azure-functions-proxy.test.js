@@ -68,7 +68,7 @@ test('Azure Functions adapter forwards API requests and session cookies to Expre
   expressApp.set('trust proxy', 1);
   expressApp.use(express.json());
   expressApp.post('/api/proxy-test', (req, res) => {
-    res.cookie('wishly.sid', 'test-session', { httpOnly: true, secure: true, sameSite: 'lax' });
+    res.cookie('wishly.sid', 'test-session', { httpOnly: true, secure: true, sameSite: 'lax', maxAge: 60_000 });
     res.status(201).json({
       body: req.body,
       cookie: req.get('cookie'),
@@ -95,5 +95,13 @@ test('Azure Functions adapter forwards API requests and session cookies to Expre
   assert.equal(body.cookie, 'wishly.sid=existing-session');
   assert.equal(body.csrfToken, 'csrf-value');
   assert.equal(body.secure, true);
-  assert.ok(response.headers.some(([name, value]) => name.toLowerCase() === 'set-cookie' && value.includes('wishly.sid=test-session')));
+  assert.equal(response.cookies.length, 1);
+  assert.equal(response.cookies[0].name, 'wishly.sid');
+  assert.equal(response.cookies[0].value, 'test-session');
+  assert.equal(response.cookies[0].path, '/');
+  assert.equal(response.cookies[0].httpOnly, true);
+  assert.equal(response.cookies[0].secure, true);
+  assert.equal(response.cookies[0].sameSite, 'Lax');
+  assert.equal(response.cookies[0].maxAge, 60);
+  assert.ok(response.cookies[0].expires instanceof Date);
 });

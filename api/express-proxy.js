@@ -21,6 +21,38 @@ const responseHopByHopHeaders = new Set([
   'upgrade',
 ]);
 
+function parseSetCookie(value) {
+  const [pair, ...attributes] = value.split(';');
+  const separator = pair.indexOf('=');
+  if (separator <= 0) throw new Error('Express returned an invalid Set-Cookie header.');
+
+  const cookie = {
+    name: pair.slice(0, separator).trim(),
+    value: pair.slice(separator + 1).trim(),
+  };
+  for (const attribute of attributes) {
+    const [rawName, ...rawValue] = attribute.trim().split('=');
+    const name = rawName.toLowerCase();
+    const value = rawValue.join('=').trim();
+    if (name === 'domain') cookie.domain = value;
+    else if (name === 'path') cookie.path = value;
+    else if (name === 'expires') {
+      const expires = new Date(value);
+      if (!Number.isNaN(expires.getTime())) cookie.expires = expires;
+    } else if (name === 'max-age') {
+      const maxAge = Number(value);
+      if (Number.isFinite(maxAge)) cookie.maxAge = maxAge;
+    } else if (name === 'samesite') {
+      const sameSite = value.toLowerCase();
+      if (['strict', 'lax', 'none'].includes(sameSite)) {
+        cookie.sameSite = sameSite[0].toUpperCase() + sameSite.slice(1);
+      }
+    } else if (name === 'secure') cookie.secure = true;
+    else if (name === 'httponly') cookie.httpOnly = true;
+  }
+  return cookie;
+}
+
 export function createExpressProxy(expressApp) {
   const server = http.createServer(expressApp);
   let listening;
@@ -62,15 +94,19 @@ export function createExpressProxy(expressApp) {
         response.on('error', reject);
         response.on('end', () => {
           const responseHeaders = [];
+          const cookies = [];
           for (let index = 0; index < response.rawHeaders.length; index += 2) {
             const name = response.rawHeaders[index];
-            if (!responseHopByHopHeaders.has(name.toLowerCase())) {
+            if (name.toLowerCase() === 'set-cookie') {
+              cookies.push(parseSetCookie(response.rawHeaders[index + 1]));
+            } else if (!responseHopByHopHeaders.has(name.toLowerCase())) {
               responseHeaders.push([name, response.rawHeaders[index + 1]]);
             }
           }
           resolve({
             status: response.statusCode || 500,
             headers: responseHeaders,
+            ...(cookies.length ? { cookies } : {}),
             body: Buffer.concat(chunks),
           });
         });
