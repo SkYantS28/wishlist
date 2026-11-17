@@ -75,14 +75,31 @@ Em produção, defina `DATABASE_URL`, `SESSION_SECRET` (único e aleatório) e `
 
 ## Azure Static Web Apps
 
-O arquivo `public/staticwebapp.config.json` é copiado pelo Vite para a raiz de `dist` e habilita o fallback do app React sem reescrever chamadas `/api/*` como HTML. No assistente de build do Azure, use:
+O arquivo `public/staticwebapp.config.json` é copiado pelo Vite para a raiz de `dist` e habilita o fallback do app React sem reescrever chamadas `/api/*` como HTML. O workflow do GitHub Actions configura `api_location: api`, que publica o adaptador Azure Functions integrado e encaminha os endpoints para a API Express existente. O build do workflow também sincroniza o schema Prisma usado pela Function.
 
-- App location: `/`
-- API location: deixe vazia
-- Output location: `dist`
-- Build command: `npm run build`
+O workflow de deploy espera um banco PostgreSQL acessível pela Azure Function e as configurações de aplicação abaixo no recurso Static Web App. Sem `DATABASE_URL` e `SESSION_SECRET`, a API não inicia.
 
-Isso publica somente o frontend. O backend atual é um servidor Express e não é executado pelo Static Web Apps como conteúdo estático; para login e listas funcionarem, hospede a API em um serviço compatível ou adapte-a para Azure Functions e configure a API location.
+| Application setting | Uso |
+| --- | --- |
+| `NODE_ENV` | Defina como `production` para cookies seguros HTTPS |
+| `DATABASE_URL` | Connection string do pool Neon (host contém `-pooler`), com SSL |
+| `DIRECT_URL` | Connection string Neon sem pooler, usada pelas migrações Prisma |
+| `SESSION_SECRET` | Segredo aleatório exclusivo, com pelo menos 32 caracteres |
+| `APP_URL` | URL HTTPS final do Static Web App |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` | Configuração opcional para recuperação de senha |
+| `PREVIEW_ALLOWED_HOSTS` | Allowlist de lojas separada por vírgulas |
+
+Crie um projeto PostgreSQL no [Neon](https://neon.com/), plano gratuito, e copie os dois endereços na tela **Connect**. Use o endereço com `-pooler` para `DATABASE_URL` e o endereço direto (sem `-pooler`) para `DIRECT_URL`. Adicione `sslmode=require` aos dois. A URL agrupada é usada pela API; migrações usam a conexão direta.
+
+Aplique as migrações antes de usar a aplicação, passando a URL direta para ambos os valores neste comando:
+
+```bash
+DATABASE_URL='postgresql://USUARIO:SENHA@HOST-DIRETO/DB?sslmode=require' DIRECT_URL='postgresql://USUARIO:SENHA@HOST-DIRETO/DB?sslmode=require' npm run db:deploy
+```
+
+No recurso Static Web App, configure `DATABASE_URL` com a URL pooled do Neon, `DIRECT_URL` com a URL direta, `NODE_ENV=production`, `APP_URL` com a URL HTTPS do site e `SESSION_SECRET` com uma chave aleatória. Não envie as URLs ao GitHub nem ao chat; salve-as nos Application settings do Azure. O plano gratuito tem limites e condições que podem mudar.
+
+O PostgreSQL local do Docker Compose serve somente para desenvolvimento. Rode `npm run db:generate` para sincronizar o schema raiz com a cópia usada no pacote Azure Functions.
 
 ## Testes
 

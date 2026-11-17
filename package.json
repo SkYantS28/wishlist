@@ -5,18 +5,20 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:api": "node --watch server/index.js",
+    "dev:api": "node --watch api/index.js",
     "build": "vite build",
     "preview": "vite preview",
-    "start": "node server/index.js",
-    "db:generate": "prisma generate",
+    "start": "node api/index.js",
+    "db:generate": "npm run db:sync-functions-schema && prisma generate && prisma generate --schema=api/prisma/schema.prisma",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
+    "db:sync-functions-schema": "node scripts/sync-functions-schema.js",
     "test": "node --test"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^4.3.4",
+    "@azure/functions": "^4.7.2",
     "@prisma/client": "^6.19.0",
     "bcryptjs": "^3.0.2",
     "connect-pg-simple": "^10.0.0",

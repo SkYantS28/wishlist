@@ -18,7 +18,7 @@ test('authenticated wishlist API enforces access, feed, and reservation rules', 
     { email: `other-${suffix}@example.test`, username: `other_${suffix}` },
   ];
   const port = await getAvailablePort();
-  const server = spawn(process.execPath, ['server/index.js'], {
+  const server = spawn(process.execPath, ['api/index.js'], {
     env: {
       ...process.env,
       DATABASE_URL: databaseUrl,

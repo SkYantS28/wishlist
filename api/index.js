@@ -782,14 +782,22 @@ app.use((error, _req, res, _next) => {
 });
 
 const port = Number(process.env.PORT || 3001);
-const server = app.listen(port, () => console.log(`wishly API running on http://localhost:${port}`));
+export { app };
+
+const isDirectRun = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+const server = isDirectRun
+  ? app.listen(port, () => console.log(`wishly API running on http://localhost:${port}`))
+  : null;
 
 async function shutdown() {
+  if (!server) return;
   server.close(async () => {
     await prisma.$disconnect();
     await pool.end();
     process.exit(0);
   });
 }
-process.on('SIGINT', shutdown);
-process.on('SIGTERM', shutdown);
+if (server) {
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
+}

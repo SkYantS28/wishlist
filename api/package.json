@@ -1,0 +1,33 @@
+{
+  "name": "wishly-functions",
+  "private": true,
+  "type": "module",
+  "main": "functions.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "postinstall": "prisma generate --schema=prisma/schema.prisma"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.7.2",
+    "@prisma/client": "^6.19.0",
+    "bcryptjs": "^3.0.2",
+    "connect-pg-simple": "^10.0.0",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "express-session": "^1.18.1",
+    "file-type": "^21.0.0",
+    "helmet": "^8.0.0",
+    "ipaddr.js": "^2.2.0",
+    "multer": "^2.0.2",
+    "nodemailer": "^10.6.0",
+    "pg": "^8.13.1",
+    "prisma": "^6.19.0",
+    "zod": "^4.6.7"
+  },
+  "overrides": {
+    "deepmerge-ts": "^8.0.2"
+  }
+}
