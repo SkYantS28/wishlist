@@ -47,6 +47,8 @@ export async function handleFunctionRequest(request, context) {
       jsonBody: {
         error: 'A API não conseguiu processar a solicitação.',
         code: stage === 'initialization' ? 'api_initialization_failed' : 'api_proxy_failed',
+        errorType: errorName,
+        ...(typeof error?.code === 'string' ? { errorCode: error.code.slice(0, 40) } : {}),
         requestId,
       },
     };

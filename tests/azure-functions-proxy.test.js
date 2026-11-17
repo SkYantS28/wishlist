@@ -48,6 +48,8 @@ test('Azure Function returns a request ID when API initialization fails', async 
     assert.deepEqual(response.jsonBody, {
       error: 'A API não conseguiu processar a solicitação.',
       code: 'api_initialization_failed',
+      errorType: 'TypeError',
+      errorCode: 'ERR_INVALID_URL',
       requestId: 'test-request-id',
     });
     assert.equal(errors.length, 1);
