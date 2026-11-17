@@ -2,6 +2,30 @@ import assert from 'node:assert/strict';
 import express from 'express';
 import { test } from 'node:test';
 import { createExpressProxy } from '../api/express-proxy.js';
+import { handleFunctionRequest } from '../api/functions.js';
+
+test('Azure Function reports missing application settings without failing route registration', async () => {
+  const names = ['DATABASE_URL', 'SESSION_SECRET', 'APP_URL', 'NODE_ENV'];
+  const previous = new Map(names.map((name) => [name, process.env[name]]));
+  for (const name of names) delete process.env[name];
+  const warnings = [];
+
+  try {
+    const response = await handleFunctionRequest(
+      new Request('https://wishly.example/api/auth/config'),
+      { warn: (message) => warnings.push(message) },
+    );
+
+    assert.equal(response.status, 503);
+    assert.deepEqual(response.jsonBody.missingSettings, names.slice(0, 3).concat('NODE_ENV=production'));
+    assert.equal(warnings.length, 1);
+  } finally {
+    for (const [name, value] of previous) {
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
+  }
+});
 
 test('Azure Functions adapter forwards API requests and session cookies to Express', async (context) => {
   const expressApp = express();
