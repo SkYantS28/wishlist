@@ -77,7 +77,7 @@ Em produção, defina `DATABASE_URL`, `SESSION_SECRET` (único e aleatório) e `
 
 O arquivo `public/staticwebapp.config.json` é copiado pelo Vite para a raiz de `dist` e habilita o fallback do app React sem reescrever chamadas `/api/*` como HTML. O workflow do GitHub Actions configura `api_location: api`, que publica o adaptador Azure Functions integrado e encaminha os endpoints para a API Express existente. O build do workflow também sincroniza o schema Prisma usado pela Function.
 
-O workflow de deploy espera um banco PostgreSQL acessível pela Azure Function e as configurações de aplicação abaixo no recurso Static Web App. Sem `DATABASE_URL` e `SESSION_SECRET`, a API não inicia.
+O workflow de deploy espera um banco PostgreSQL acessível pela Azure Function e as configurações de aplicação abaixo no recurso Static Web App. Sem `DATABASE_URL`, `SESSION_SECRET`, `APP_URL` ou `NODE_ENV=production`, os endpoints da API respondem com HTTP 503 e informam quais configurações faltam; a Function permanece registrada em vez de a rota responder 404.
 
 | Application setting | Uso |
 | --- | --- |
