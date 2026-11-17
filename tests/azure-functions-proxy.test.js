@@ -27,6 +27,40 @@ test('Azure Function reports missing application settings without failing route 
   }
 });
 
+test('Azure Function returns a request ID when API initialization fails', async () => {
+  const values = {
+    DATABASE_URL: 'postgresql://invalid:invalid@127.0.0.1:5432/wishly',
+    SESSION_SECRET: 'a'.repeat(32),
+    APP_URL: 'not-a-valid-url',
+    NODE_ENV: 'production',
+  };
+  const previous = new Map(Object.keys(values).map((name) => [name, process.env[name]]));
+  Object.assign(process.env, values);
+  const errors = [];
+
+  try {
+    const response = await handleFunctionRequest(
+      new Request('https://wishly.example/api/auth/config'),
+      { invocationId: 'test-request-id', error: (message) => errors.push(message) },
+    );
+
+    assert.equal(response.status, 503);
+    assert.deepEqual(response.jsonBody, {
+      error: 'A API não conseguiu processar a solicitação.',
+      code: 'api_initialization_failed',
+      requestId: 'test-request-id',
+    });
+    assert.equal(errors.length, 1);
+    assert.match(errors[0], /test-request-id.*TypeError/);
+    assert.doesNotMatch(errors[0], /postgresql:\/\/invalid/);
+  } finally {
+    for (const [name, value] of previous) {
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
+  }
+});
+
 test('Azure Functions adapter forwards API requests and session cookies to Express', async (context) => {
   const expressApp = express();
   expressApp.set('trust proxy', 1);
