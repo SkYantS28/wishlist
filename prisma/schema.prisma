@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Visibility {
+  public
+  private
+}
+
+enum FollowStatus {
+  pending
+  accepted
+}
+
+model User {
+  id                String         @id @default(uuid()) @db.Uuid
+  email             String         @unique @db.VarChar(254)
+  passwordHash      String         @db.VarChar(100)
+  username          String         @unique @db.VarChar(30)
+  displayName       String         @db.VarChar(80)
+  bio               String         @default("") @db.VarChar(160)
+  profileVisibility Visibility     @default(public)
+  avatarData        Bytes?         @db.ByteA
+  avatarMime        String?        @db.VarChar(64)
+  avatarUpdatedAt   DateTime?      @db.Timestamptz(6)
+  createdAt         DateTime       @default(now()) @db.Timestamptz(6)
+  lists             Wishlist[]
+  following         Follow[]       @relation("Follower")
+  followers         Follow[]       @relation("Following")
+  reservations      Reservation[]
+  passwordReset     PasswordResetToken?
+
+  @@index([displayName])
+}
+
+model Wishlist {
+  id          String       @id @default(uuid()) @db.Uuid
+  userId      String       @db.Uuid
+  title       String       @db.VarChar(80)
+  description String       @default("") @db.VarChar(180)
+  visibility  Visibility   @default(public)
+  createdAt   DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime     @updatedAt @db.Timestamptz(6)
+  owner       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items       WishlistItem[]
+
+  @@index([userId, visibility])
+  @@index([title])
+}
+
+model WishlistItem {
+  id          String        @id @default(uuid()) @db.Uuid
+  wishlistId  String        @db.Uuid
+  title       String        @db.VarChar(150)
+  productUrl  String        @db.VarChar(2048)
+  imageUrl    String?       @db.VarChar(2048)
+  purchased   Boolean       @default(false)
+  createdAt   DateTime      @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime      @updatedAt @db.Timestamptz(6)
+  wishlist    Wishlist      @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+  reservation Reservation?
+
+  @@index([wishlistId, createdAt])
+  @@index([title])
+}
+
+model Follow {
+  followerId  String   @db.Uuid
+  followingId String   @db.Uuid
+  status      FollowStatus @default(pending)
+  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+  follower    User     @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@id([followerId, followingId])
+  @@index([followingId, status, createdAt])
+  @@index([followerId, status, createdAt])
+}
+
+model PasswordResetToken {
+  userId    String   @id @db.Uuid
+  tokenHash String   @unique @db.VarChar(64)
+  expiresAt DateTime @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+}
+
+model Reservation {
+  id        String      @id @default(uuid()) @db.Uuid
+  itemId    String      @unique @db.Uuid
+  userId    String      @db.Uuid
+  createdAt DateTime    @default(now()) @db.Timestamptz(6)
+  item      WishlistItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
