@@ -11,7 +11,7 @@ import helmet from 'helmet';
 import multer from 'multer';
 import nodemailer from 'nodemailer';
 import { rateLimit } from 'express-rate-limit';
-import { Prisma, PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from './generated/prisma/index.js';
 import { fileTypeFromBuffer } from 'file-type';
 import { z } from 'zod';
 import { getPreviewAllowedHosts, getProductImage } from './preview.js';

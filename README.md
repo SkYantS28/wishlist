@@ -99,7 +99,7 @@ DATABASE_URL='postgresql://USUARIO:SENHA@HOST-DIRETO/DB?sslmode=require' DIRECT_
 
 No recurso Static Web App, configure `DATABASE_URL` com a URL pooled do Neon, `DIRECT_URL` com a URL direta, `NODE_ENV=production`, `APP_URL` com a URL HTTPS do site e `SESSION_SECRET` com uma chave aleatória. Não envie as URLs ao GitHub nem ao chat; salve-as nos Application settings do Azure. O plano gratuito tem limites e condições que podem mudar.
 
-O PostgreSQL local do Docker Compose serve somente para desenvolvimento. Rode `npm run db:generate` para sincronizar o schema raiz com a cópia usada no pacote Azure Functions.
+O PostgreSQL local do Docker Compose serve somente para desenvolvimento. Rode `npm run db:generate` para sincronizar o schema raiz e gerar os clientes Prisma do app e do pacote Azure Functions; o cliente da API é empacotado dentro de `api/generated` para estar disponível no runtime da Function.
 
 ## Testes
 
