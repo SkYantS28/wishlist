@@ -248,9 +248,14 @@ const avatarUpload = multer({
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 
-app.get('/api/auth/csrf', (req, res) => {
-  if (!req.session.csrfToken) createCsrfToken(req);
-  res.json({ csrfToken: req.session.csrfToken });
+app.get('/api/auth/csrf', (req, res, next) => {
+  if (req.session.csrfToken) return res.json({ csrfToken: req.session.csrfToken });
+
+  const csrfToken = createCsrfToken(req);
+  req.session.save((error) => {
+    if (error) return next(error);
+    res.json({ csrfToken });
+  });
 });
 
 app.get('/api/auth/config', (_req, res) => {
